@@ -1,0 +1,43 @@
+{
+	"debug_mode__COMMENT__": "To put the bot in debug mode",
+	"debug_mode": false,
+	"lock_file__COMMENT__": "The file used for the inter-process lock (so only one copy runs at once)",
+	"lock_file": "YeenBot.lock",
+
+	"privileges__COMMENT__": "Privilege profiles granted to specific users",
+	"privileges": {
+		"default": {
+			"__COMMENT__": "This privilege profile is applied if a user doesn't exist ",
+			"default": true,
+			"operator": false,
+			"owner": false,
+			"admin": false
+		},
+		"91741518": {
+			"__NOTE__": "Creator of YeenBot, @OzzyC",
+			"operator": true,
+			"admin": true,
+			"owner": true
+		}
+	},
+
+	"sin": {
+		"reset_minutes__COMMENT__": "Time (in minutes) between resets of available sin points",
+		"reset_minutes": 10,
+		"sin_limit__COMMENT__": "The maximum number of sin points that may be earned in reset_minutes time.",
+		"sin_limit": 10
+	},
+
+	"telegram": {
+		"__COMMENT__" :"The bot token provided by Telegram's BotFather.",
+		"token": ""
+	},
+
+	"database": {
+		"uri__COMMENT__": "The database URI provided to SQLAlchemy.",
+		"uri__MYSQL__": "mysql://root:password@localhost/yeenbot",
+		"uri": "sqlite:///debug.sqlite",
+		"trackModifications__COMMENT__": "Instructs SQLAlchemy to track modifications (output emitted SQL)",
+		"trackModifications": false
+	}
+}

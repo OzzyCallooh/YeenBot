@@ -1,9 +1,14 @@
-# YeenBot ignores
+# Configuration files
 *.config.json
+!sample.config.json
+
+# Debugging files
+*.sqlite.db
+
+# Other files
 YeenBot.lock
 
-# SQLite databases
-*.sqlite.db
+###### Default Python ignore
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
