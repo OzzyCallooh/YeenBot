@@ -62,44 +62,13 @@ def command_sin(bot, update):
 	else:  
 		update.message.reply_text('Did not find user id {}'.format(tguid))
 
-"""
-def command_getsin(bot, update):
-	print('/getsin')
-	tguid = update.message.from_user.id
-
-	session = dbsession()
-	sc = session.query(SinCounter).filter(SinCounter.tg_user_id == tguid).first()
-	if not sc:
-		sc = SinCounter(update.message.from_user)
-
-	sin = 1
-	sin = sc.award_sin_with_limit(sin)
-	session.add(sc)
-	session.commit()
-
-	# Output details
-	dt = sc.sin_reset - datetime.now()
-	reset_str = None
-	if dt.total_seconds() > 0:
-		reset_str = 'in {} seconds'.format(dt.total_seconds()) 
-	else:
-		reset_str = 'immediately'
-	update.message.reply_text('Your sin changed by {}! You have {} sin avail, resetting {}.'.format(
-		sin,
-		sc.sin_avail,
-		reset_str
-	))
-
-	session.close()
-"""
-
 @privileged_command('admin')
 def command_sinset(bot, update, args):
 	if len(args) < 2:
 		update.message.reply_text('Format: /sinset <tg_user_id> <sin>')
 		return
 
-	#Verify arguments
+	# Parse arguments
 	tg_user_id = None
 	try:
 		tg_user_id = int(args[0])
@@ -114,7 +83,7 @@ def command_sinset(bot, update, args):
 		return
 
 	session = dbsession()
-	sc = session.query(SinCounter).filter(SinCounter.tg_user_id == tguid).first()
+	sc = session.query(SinCounter).filter(SinCounter.tg_user_id == tg_user_id).first()
 	if not sc:
 		sc = SinCounter(update.message.from_user)
 	sc.sin = sin
@@ -122,32 +91,6 @@ def command_sinset(bot, update, args):
 	session.commit()
 	session.close()
 	update.message.reply_text('Set user {} sin to {}'.format(tg_user_id, sin))
-
-@privileged_command('admin')
-def command_sinset(bot, update, args):
-	if len(args) < 2:
-		update.message.reply_text('Format: /sinset <tg_user_id> <sin>')
-		return
-
-	#Verify arguments
-	tg_user_id = None
-	try:
-		tg_user_id = int(args[0])
-	except ValueError:
-		update.message.reply_text('Invalid user id')
-		return
-
-	session = dbsession()
-	sc = session.query(SinCounter).filter(SinCounter.tg_user_id == tguid).first()
-	if sc:
-
-	else:
-		
-	session.add(sc)
-	session.commit()
-	session.close()
-	update.message.reply_text('Set user {} sin to {}'.format(tg_user_id, sin))
-
 
 @privileged_command('admin')
 def command_sinlimit(bot, update):
