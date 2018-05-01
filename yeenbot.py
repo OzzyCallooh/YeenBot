@@ -5,6 +5,7 @@ import database
 import sin
 import blacklist_user
 import blacklist_chat
+import blacklist_global
 import usagelog
 
 import logging
@@ -44,6 +45,7 @@ def main():
 	sin.setup_dispatcher(dispatcher)
 	blacklist_user.setup_dispatcher(dispatcher)
 	blacklist_chat.setup_dispatcher(dispatcher)
+	blacklist_global.setup_dispatcher(dispatcher)
 	usagelog.setup_dispatcher(dispatcher)
 
 	# Let's go
