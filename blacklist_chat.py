@@ -1,11 +1,13 @@
-from config import config
-from util import format_seconds
-from database import Base, dbsession
-
 import math
 from datetime import datetime
 from sqlalchemy import Column, Integer, BigInteger, String, DateTime
+from telegram import ParseMode
 from telegram.ext import CommandHandler
+
+from config import config
+from util import format_seconds
+from database import Base, dbsession
+from util import make_e621_pretty_tag_link_list
 
 BLSTATUS_ACTIVE = 0
 BLSTATUS_DELETED = 1
@@ -51,9 +53,10 @@ def command_getchatbl(bot, update, args):
 	tags = ChatBlacklist.get_chat_blacklist(update.message.chat)
 	
 	if len(tags) > 0:
-		update.message.reply_text('This chat\'s blacklisted tags: {}'.format(
-			', '.join(tags)
-		))
+		update.message.reply_text('Blacklisted tags in this chat ({count}): {tag_list}'.format(
+			count=len(tags),
+			tag_list=make_e621_pretty_tag_link_list(tags)
+		), ParseMode.MARKDOWN)
 	else:
 		update.message.reply_text('This chat has no blacklisted tags.')
 
@@ -105,5 +108,12 @@ def command_addchatbl(bot, update, args):
 
 def setup_dispatcher(dispatcher):
 	dispatcher.add_handler(CommandHandler('addchatbl', command_addchatbl, pass_args=True))
+	dispatcher.add_handler(CommandHandler('addchatblacklist', command_addchatbl, pass_args=True))
+	
 	dispatcher.add_handler(CommandHandler('delchatbl', command_delchatbl, pass_args=True))
-	dispatcher.add_handler(CommandHandler('getchatbl', command_getchatbl, pass_args=True))
+	dispatcher.add_handler(CommandHandler('delchatblacklist', command_delchatbl, pass_args=True))
+	dispatcher.add_handler(CommandHandler('remchatbl', command_delchatbl, pass_args=True))
+	dispatcher.add_handler(CommandHandler('remchatblacklist', command_delchatbl, pass_args=True))
+
+	dispatcher.add_handler(CommandHandler('chatbl', command_getchatbl, pass_args=True))
+	dispatcher.add_handler(CommandHandler('chatblacklist', command_getchatbl, pass_args=True))

@@ -101,16 +101,11 @@ def command_addbl(bot, update, args):
 		update.message.reply_text('Added tag to your blacklist: ' + tag)
 	session.close()
 
-def command_blhelp(bot, update):
-	update.message.reply_text(
-		'Blacklist commands:\n' +
-		'/addbl <tag> - Blacklist a tag for you\n' +
-		'/delbl <tag> - Unblacklist a tag for you\n' +
-		'/getbl - Show blacklist\n'
-	)
-
 def setup_dispatcher(dispatcher):
 	dispatcher.add_handler(CommandHandler('addbl', command_addbl, pass_args=True))
 	dispatcher.add_handler(CommandHandler('delbl', command_delbl, pass_args=True))
+
 	dispatcher.add_handler(CommandHandler('getbl', command_getbl, pass_args=True))
-	dispatcher.add_handler(CommandHandler('blhelp', command_blhelp))
+	dispatcher.add_handler(CommandHandler('mybl', command_getbl, pass_args=True))
+	dispatcher.add_handler(CommandHandler('myblacklist', command_getbl, pass_args=True))
+	
