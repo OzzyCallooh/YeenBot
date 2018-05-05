@@ -6,6 +6,7 @@ import sin
 import blacklist_user
 import blacklist_chat
 import blacklist_global
+import e621
 import usagelog
 
 import logging
@@ -47,7 +48,9 @@ def main():
 	blacklist_chat.setup_dispatcher(dispatcher)
 	blacklist_global.setup_dispatcher(dispatcher)
 	usagelog.setup_dispatcher(dispatcher)
+	e621.setup_dispatcher(dispatcher)
 
 	# Let's go
 	updater.start_polling(clean=True)
+	print('Idling')
 	updater.idle()
