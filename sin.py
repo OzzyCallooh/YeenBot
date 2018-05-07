@@ -58,7 +58,7 @@ def command_sin(bot, update):
 	session = dbsession()
 	sc = session.query(SinCounter).filter(SinCounter.tg_user_id == tguid).first()
 	if sc:
-		update.message.reply_text('Found user id {}, you have {} sin points'.format(sc.tg_user_id, sc.sin))
+		update.message.reply_text('You have {} sin points'.format(sc.sin))
 	else:  
 		update.message.reply_text('Did not find user id {}'.format(tguid))
 
