@@ -1,6 +1,8 @@
+import os
 import json
 import requests
 from urllib.parse import urlencode
+from pathlib import Path
 
 from telegram import ParseMode
 from telegram.ext import CommandHandler
@@ -10,22 +12,16 @@ from util import make_e621_wiki_link, make_e621_pretty_tag_link_list
 from blacklist_global import get_blacklisted_tags
 import blacklist_user
 import blacklist_chat
-
+from sin import SinCounter
 
 BL_TYPES = ['chat', 'global']
 
-E621_TAG_BASE_QUERY = 'order:random'
-E621_SCORE_MIN = 20
-E621_LIMIT = 20
-E621_FILE_TYPES = {'jpg', 'jpeg', 'gif', 'png', 'tif', 'bmp'}
-E621_FILE_SIZE_LIMIT = 1024*1024*2
-E621_URL_YIFF = 'https://e621.net/post/index.json'
-E621_QUERY_TIMEOUT = 10
-E621_IMAGE_TIMEOUT = 8
-E621_HEADERS = {'user-agent': 'YeenBot/1.69 (by Ozzy Callooh)'}
-E621_RATINGS = {'q', 'e', 's'}
+download_path = Path(config['e621']['download_dir'])
+def init_download_dir():
+	download_path.mkdir(parents=True, exist_ok=True)
+init_download_dir()
 
-def check_blacklist(bot, update, tags, bl={}):
+def check_blacklist(bot, update, tags, bl):
 	bad_tags = {'global': set(),'chat': set(), 'user': set(), 'ignore': set()}
 
 	# Check for any bad tags, add to respective bad_tags set
@@ -64,53 +60,30 @@ def check_blacklist(bot, update, tags, bl={}):
 		return False
 	return True
 
+entry_keys = ['id','tags','file_url','file_ext','file_size','status','rating','md5']
 def is_valid_entry(entry):
-	return \
-		'tags' in entry and \
-		'file_url' in entry and \
-		'file_ext' in entry and entry['file_ext'] in E621_FILE_TYPES and \
-		'file_size' in entry and entry['file_size'] <= E621_FILE_SIZE_LIMIT and \
-		'status' in entry and entry['status'] == 'active' and \
-		'rating' in entry and entry['rating'] in E621_RATINGS and \
-		'md5' in entry
+	for entry_key in entry_keys:
+		if not entry_key in entry:
+			print('Missing key: ' + entry_key)
+			return False
+	if entry['file_ext'] not in config['e621']['file_types']:
+		print('Bad file type')
+		return False
+	if entry['file_size'] > config['e621']['file_size_limit']:
+		print('Over size limit')
+		return False
+	if entry['status'] != 'active':
+		print('Not active')
+		return False
+	if entry['rating'] not in config['e621']['ratings']:
+		print('Bad rating')
+		return False
+	return True
 
 def get_entry_blacklisted_tags(entry, bl):
 	return set(entry['tags'].split(' ')).intersection(bl['ignore'] | bl['user'] | bl['chat'] | bl['global'])
 
-def e621_search(bot, update, tags, tags_ignore=[]):
-	bl = {
-		'ignore': set(tags_ignore),
-		'user': set(blacklist_user.UserBlacklist.get_user_blacklist(update.message.from_user)),
-		'chat': set(blacklist_chat.ChatBlacklist.get_chat_blacklist(update.message.chat)),
-		'global': set(config['blacklist']['global'])
-	}
-	if not check_blacklist(bot, update, tags, bl=bl): return
-
-	tag_query = E621_TAG_BASE_QUERY + ' '.join([''] + tags)
-	url = E621_URL_YIFF + '?' + urlencode({
-		'limit': E621_LIMIT, 'tags': tag_query
-	})
-	print('e621 Query: {query}'.format(query=tag_query))
-	print('e621 URL: {url}'.format(url=url))
-
-	update.message.reply_text('Performing [search]({url}), please wait...'.format(url=url), ParseMode.MARKDOWN)
-
-	# For each explicitly queried tag, pretend it is not on the blacklist for just this query
-	for tag in tags:
-		if tag in bl['user']:
-			bl['user'].remove(tag)
-
-	# Send the reuqest
-	entries = None
-	try:
-		r = requests.get(url, timeout=E621_QUERY_TIMEOUT, headers=E621_HEADERS)
-		entries = r.json()
-	except Exception as e:
-		update.message.reply_text('Something went wrong while contacting e621.')
-		print(e)
-		return
-
-	# Select an entry
+def select_entry(entries, bl):
 	selected_entry = None
 	num_valid = 0
 	num_blacklisted = 0
@@ -128,14 +101,103 @@ def e621_search(bot, update, tags, tags_ignore=[]):
 				num_blacklisted += 1
 				found_bl_tags |= entry_bl_tags
 		else:
-			print('Entry ' + str(i) + ' not valid:')
-			print(json.dumps(entry))
+			print('Entry ' + str(i) + ' not valid')
+			#print(json.dumps(entry))
+	return selected_entry
 
-	if selected_entry != None:
-		update.message.reply_text('Selected: [file]({file_url})'.format(file_url=selected_entry['file_url']), parse_mode=ParseMode.MARKDOWN)
-	else:
-		update.message.reply_text('No result!')
+def download_entry(entry):
+	#print('Downloading entry')
+	try:
+		r = requests.get(entry['file_url'], stream=True, timeout=config['e621']['image_timeout'])
+	except Exception as e: # TODO: add timeout?
+		"""update.message.reply_text('Encountered problem while downloading image from e621. Here\'s a [link]({file_url}) instead.'.format(
+			file_url=entry['file_url']
+		), parse_mode=ParseMode.MARKDOWN)"""
+		print('Download error.\n' + str(e))
+		return
 
+	if r.status_code != 200:
+		return
+
+	dl_path = Path(download_path, '{md5}.{file_ext}'.format(**entry))
+
+	# Exit early if we've already downloaded this path
+	if dl_path.exists():
+		return dl_path
+
+	# Write to file
+	try:
+		with dl_path.open(mode='wb') as f:
+			for chunk in r.iter_content(1024):
+				f.write(chunk)
+	except OSError as e:
+		print('OSError')
+		return
+
+	return dl_path
+
+def send_entry(bot, update, dl_path):
+	with dl_path.open(mode='rb') as f:
+		bot.sendPhoto(
+			chat_id=update.message.chat_id,
+			photo=f,
+			parse_mode=ParseMode.MARKDOWN
+		)
+
+def e621_search(bot, update, tags, tags_ignore=[]):
+	bl = {
+		'ignore': set(tags_ignore),
+		'user': set(blacklist_user.UserBlacklist.get_user_blacklist(update.message.from_user)),
+		'chat': set(blacklist_chat.ChatBlacklist.get_chat_blacklist(update.message.chat)),
+		'global': set(config['blacklist']['global'])
+	}
+	if not check_blacklist(bot, update, tags, bl):
+		print('Ignoring request due to blacklist')
+		return
+
+	tag_query = config['e621']['base_query'] + ' '.join([''] + tags)
+	url = config['e621']['base_url'] + config['e621']['urls']['post/index'] + '?' + urlencode({
+		'limit': config['e621']['query_entry_limit'], 'tags': tag_query
+	})
+
+	reply_msg = update.message.reply_text('Performing [search]({url}), please wait...'.format(url=url), ParseMode.MARKDOWN)
+
+	# For each explicitly queried tag, pretend it is not on the blacklist for just this query
+	for tag in tags:
+		if tag in bl['user']:
+			bl['user'].remove(tag)
+
+	# Send the reuqest
+	entries = None
+	try:
+		r = requests.get(url, timeout=config['e621']['query_timeout'], headers=config['e621']['headers'])
+		entries = r.json()
+	except Exception as e:
+		reply_msg.edit_text('Something went wrong while contacting e621.')
+		print(e)
+		return
+
+	# Select an entry
+	entry = select_entry(entries, bl)
+	if not entry:
+		reply_msg.edit_text('No results.')
+		return
+
+	# Download entry
+	dl_path = download_entry(entry)
+	if not dl_path:
+		reply_msg.edit_text('Image download failed')
+		return
+
+	# Send file
+	reply_msg.edit_text('Sending...')
+	send_entry(bot, update, dl_path)
+	reply_msg.delete()
+
+	SinCounter.award_sin(update.message.from_user, config['e621']['sin_award'])
+
+	# Delete file
+	dl_path.unlink()
 
 def command_e621(bot, update, args):
 	e621_search(bot, update, args)
