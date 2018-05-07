@@ -57,7 +57,7 @@ def command_getbl(bot, update, args):
 
 def command_delbl(bot, update, args):
 	if len(args) == 0:
-		update.message.reply_text('Format: /addbl <tag>')
+		update.message.reply_text('Format: /deleteblacklist <tag>')
 		return
 	tag = args[0]
 	session = dbsession()
@@ -82,7 +82,7 @@ def command_delbl(bot, update, args):
 
 def command_addbl(bot, update, args):
 	if len(args) == 0:
-		update.message.reply_text('Format: /addbl <tag>')
+		update.message.reply_text('Format: /addblacklist <tag>')
 		return
 	tag = args[0]
 	session = dbsession()
@@ -103,7 +103,9 @@ def command_addbl(bot, update, args):
 
 def setup_dispatcher(dispatcher):
 	dispatcher.add_handler(CommandHandler('addbl', command_addbl, pass_args=True))
+	dispatcher.add_handler(CommandHandler('addblacklist', command_addbl, pass_args=True))
 	dispatcher.add_handler(CommandHandler('delbl', command_delbl, pass_args=True))
+	dispatcher.add_handler(CommandHandler('delblacklist', command_delbl, pass_args=True))
 
 	dispatcher.add_handler(CommandHandler('getbl', command_getbl, pass_args=True))
 	dispatcher.add_handler(CommandHandler('mybl', command_getbl, pass_args=True))
