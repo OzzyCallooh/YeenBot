@@ -51,6 +51,6 @@ def main():
 	e621.setup_dispatcher(dispatcher)
 
 	# Let's go
-	updater.start_polling(clean=True)
+	updater.start_polling(clean=config['telegram']['clean'])
 	print('Idling')
 	updater.idle()
