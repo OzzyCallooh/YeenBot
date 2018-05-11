@@ -1,3 +1,5 @@
+from functools import wraps
+
 from database import Base, dbsession
 from privileges import privileged_command
 
@@ -48,6 +50,16 @@ def log_command(command, bot, update, result=None, message=None):
 	session.add(log)
 	session.commit()
 	session.close()
+
+def logged_command(command):
+	def deco(func):
+		@wraps(func)
+		def wrapper(*args, **kwargs):
+			res = func(*args, **kwargs)
+			log_command(command, args[0], args[1])
+			return res
+		return wrapper
+	return deco
 
 @privileged_command('operator')
 def command_note(bot, update):

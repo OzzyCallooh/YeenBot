@@ -8,6 +8,7 @@ from config import config
 from util import format_seconds
 from database import Base, dbsession
 from util import make_e621_pretty_tag_link_list
+from usagelog import logged_command
 
 BLSTATUS_ACTIVE = 0
 BLSTATUS_DELETED = 1
@@ -49,6 +50,7 @@ class ChatBlacklist(Base):
 		session.close()
 		return tags
 
+@logged_command('getchatbl')
 def command_getchatbl(bot, update, args):
 	tags = ChatBlacklist.get_chat_blacklist(update.message.chat)
 	
@@ -60,6 +62,7 @@ def command_getchatbl(bot, update, args):
 	else:
 		update.message.reply_text('This chat has no blacklisted tags.')
 
+@logged_command('delchatbl')
 def command_delchatbl(bot, update, args):
 	if len(args) == 0:
 		update.message.reply_text('Format: /delchatbl <tag>')
@@ -85,6 +88,7 @@ def command_delchatbl(bot, update, args):
 	else:
 		update.message.reply_text('This chat does not have this tag blacklisted: ' + tag)
 
+@logged_command('addchatbl')
 def command_addchatbl(bot, update, args):
 	if len(args) == 0:
 		update.message.reply_text('Format: /addchatbl <tag>')

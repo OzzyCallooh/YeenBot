@@ -5,6 +5,7 @@ from telegram.ext import CommandHandler
 from util import make_e621_pretty_tag_link_list
 import blacklist_user
 import blacklist_chat
+from usagelog import logged_command
 
 bl_global = sorted(config['blacklist']['global'])
 
@@ -13,11 +14,13 @@ def get_blacklisted_tags(user, chat):
 	bl_chat = blacklist_chat.ChatBlacklist.get_chat_blacklist(chat)
 	return bl_user + bl_chat + bl_global
 
+@logged_command('globalbl')
 def command_globalbl(bot, update):
 	reply = '*Global Blacklist* ({count} tags): '.format(count=len(bl_global))
 	reply += make_e621_pretty_tag_link_list(bl_global)
 	update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
+@logged_command('bl')
 def command_bl(bot, update):
 	reply = '*Blacklisted Tags*:'
 
@@ -31,6 +34,7 @@ def command_bl(bot, update):
 
 	update.message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
 
+@logged_command('blhelp')
 def command_blhelp(bot, update):
 	update.message.reply_text(
 		'Blacklist commands:\n' +

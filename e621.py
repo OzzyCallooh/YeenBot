@@ -3,6 +3,7 @@ import json
 import requests
 from urllib.parse import urlencode
 from pathlib import Path
+from usagelog import logged_command
 
 from telegram import ParseMode
 from telegram.ext import CommandHandler
@@ -199,6 +200,7 @@ def e621_search(bot, update, tags, tags_ignore=[]):
 	# Delete file
 	dl_path.unlink()
 
+@logged_command('e621')
 def command_e621(bot, update, args):
 	e621_search(bot, update, args)
 

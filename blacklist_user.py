@@ -1,5 +1,6 @@
 from config import config
 from util import format_seconds
+from usagelog import logged_command
 from database import Base, dbsession
 
 import math
@@ -45,6 +46,7 @@ class UserBlacklist(Base):
 		session.close()
 		return tags
 
+@logged_command('getbl')
 def command_getbl(bot, update, args):
 	tags = UserBlacklist.get_user_blacklist(update.message.from_user)
 	
@@ -55,6 +57,7 @@ def command_getbl(bot, update, args):
 	else:
 		update.message.reply_text('You have no blacklisted tags.')
 
+@logged_command('delbl')
 def command_delbl(bot, update, args):
 	if len(args) == 0:
 		update.message.reply_text('Format: /deleteblacklist <tag>')
@@ -80,6 +83,7 @@ def command_delbl(bot, update, args):
 	else:
 		update.message.reply_text('You have not blacklisted tag: ' + tag)
 
+@logged_command('addbl')
 def command_addbl(bot, update, args):
 	if len(args) == 0:
 		update.message.reply_text('Format: /addblacklist <tag>')

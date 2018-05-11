@@ -18,6 +18,7 @@ def user_has_privilege(tg_user, privilege):
 
 def privileged_command(privilege):
 	def deco(func):
+		@wraps(func)
 		def wrapper(*args, **kwargs):
 			update = args[1]
 			if user_has_privilege(update.message.from_user, privilege):

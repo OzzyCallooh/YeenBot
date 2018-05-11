@@ -12,17 +12,20 @@ import usagelog
 import logging
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
+@usagelog.logged_command('start')
 def command_start(bot, update):
 	print('/start')
-	usagelog.log_command('start', bot, update)
+	#usagelog.log_command('start', bot, update)
 	update.message.reply_text('Hello, I am YeenBot!')
 
+@usagelog.logged_command('special')
 @privileged_command('operator')
 def command_special(bot, update):
 	print('/special')
-	usagelog.log_command('special', bot, update)
+	#usagelog.log_command('special', bot, update)
 	update.message.reply_text('Hello, master!')
 
+@usagelog.logged_command('hello')
 def command_hello(bot, update):
 	print('/hello')
 	update.message.reply_text('Hello, world')
