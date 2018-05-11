@@ -3,6 +3,11 @@
 """
 import math
 
+def make_tg_user_url(tg_user_id, text=None):
+	if text == None:
+		text = str(tg_user_id)
+	return '[{text}](tg://user?id={tg_user_id})'.format(tg_user_id=tg_user_id, text=text)
+
 def format_seconds(secs, short=True):
 	hrs = math.floor(secs / 3600)
 	secs = secs - hrs * 3600

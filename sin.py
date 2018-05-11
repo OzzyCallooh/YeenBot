@@ -1,5 +1,6 @@
 from config import config
-from util import format_seconds
+from util import format_seconds, make_tg_user_url
+from usagelog import logged_command
 from privileges import privileged_command
 from database import Base, dbsession
 
@@ -20,8 +21,8 @@ class SinCounter(Base):
 	sin_reset = Column(DateTime, nullable=False)
 	last_sin = Column(DateTime)
 
-	def __init__(self, tg_user):
-		self.tg_user_id = tg_user.id
+	def __init__(self, tg_user_id):
+		self.tg_user_id = tg_user_id
 		self.first_seen = datetime.now()
 		self.sin = 0
 		self.reset_sin()
@@ -44,13 +45,14 @@ class SinCounter(Base):
 		session = dbsession()
 		sc = session.query(SinCounter).filter(SinCounter.tg_user_id == tg_user.id).first()
 		if not sc:
-			sc = SinCounter(tg_user)
+			sc = SinCounter(tg_user.id)
 		sin = sc.award_sin_with_limit(sin)
 		session.add(sc)
 		session.commit()
 		session.close()
 		return sin
 
+@logged_command('sin')
 def command_sin(bot, update):
 	print('/sin')
 	tguid = update.message.from_user.id
@@ -60,9 +62,36 @@ def command_sin(bot, update):
 	if sc:
 		update.message.reply_text('You have {} sin points'.format(sc.sin))
 	else:  
-		update.message.reply_text('Did not find user id {}'.format(tguid))
+		update.message.reply_text('You haven\'t sinned...yet.')
 
 @privileged_command('admin')
+@logged_command('singet')
+def command_singet(bot, update, args):
+	if len(args) < 1:
+		update.message.reply_text('Format: /singet <tg_user_id>')
+		return
+
+	# Parse arguments
+	tg_user_id = None
+	try:
+		tg_user_id = int(args[0])
+	except ValueError:
+		update.message.reply_text('Invalid user id')
+		return
+
+	session = dbsession()
+	sc = session.query(SinCounter).filter(SinCounter.tg_user_id == tg_user_id).first()
+	reply = None
+	if sc:
+		reply = 'User ' + make_tg_user_url(tg_user_id) + ' has {} sin'.format(sc.sin)
+	else:
+		reply = 'User ' + make_tg_user_url(tg_user_id) + ' has not sin...yet.'
+			
+	update.message.reply_text(reply, parse_mode='MARKDOWN')
+	session.close()
+
+@privileged_command('admin')
+@logged_command('sinset')
 def command_sinset(bot, update, args):
 	if len(args) < 2:
 		update.message.reply_text('Format: /sinset <tg_user_id> <sin>')
@@ -85,14 +114,72 @@ def command_sinset(bot, update, args):
 	session = dbsession()
 	sc = session.query(SinCounter).filter(SinCounter.tg_user_id == tg_user_id).first()
 	if not sc:
-		sc = SinCounter(update.message.from_user)
+		sc = SinCounter(tg_user_id)
 	sc.sin = sin
 	session.add(sc)
 	session.commit()
 	session.close()
-	update.message.reply_text('Set user {} sin to {}'.format(tg_user_id, sin))
+	update.message.reply_text('Set user ' + make_tg_user_url(tg_user_id) + ' sin to {}'.format(sin), parse_mode='MARKDOWN')
 
 @privileged_command('admin')
+@logged_command('sinadd')
+def command_sinadd(bot, update, args):
+	if len(args) < 2:
+		update.message.reply_text('Format: /sinadd <tg_user_id> <sin>')
+		return
+
+	# Parse arguments
+	tg_user_id = None
+	try:
+		tg_user_id = int(args[0])
+	except ValueError:
+		update.message.reply_text('Invalid user id')
+		return
+	sin = None
+	try:
+		sin = int(args[1])
+	except ValueError:
+		update.message.reply_text('Invalid sin count')
+		return
+
+	session = dbsession()
+	sc = session.query(SinCounter).filter(SinCounter.tg_user_id == tg_user_id).first()
+	if not sc:
+		sc = SinCounter(tg_user_id)
+	sc.sin += sin
+	update.message.reply_text('User ' + make_tg_user_url(tg_user_id) + ' was given {} sin, they now have {}'.format(sin, sc.sin), parse_mode='MARKDOWN')
+	session.add(sc)
+	session.commit()
+	session.close()
+
+@privileged_command('admin')
+@logged_command('sinlimitreset')
+def command_sinlimitreset(bot, update, args):
+	if len(args) < 1:
+		update.message.reply_text('Format: /sinadd <tg_user_id>')
+		return
+
+	# Parse arguments
+	tg_user_id = None
+	try:
+		tg_user_id = int(args[0])
+	except ValueError:
+		update.message.reply_text('Invalid user id')
+		return
+
+	session = dbsession()
+	sc = session.query(SinCounter).filter(SinCounter.tg_user_id == tg_user_id).first()
+	if sc:
+		sc.reset_sin()
+		update.message.reply_text('User ' + make_tg_user_url(tg_user_id) + ' sin limit has been reset.', parse_mode='MARKDOWN')
+		session.add(sc)
+		session.commit()
+		session.close()
+	else:
+		update.message.reply_text('User ' + make_tg_user_url(tg_user_id) + ' has not sinned...yet.', parse_mode='MARKDOWN')
+
+@privileged_command('admin')
+@logged_command('sinlimit')
 def command_sinlimit(bot, update):
 	tguid = update.message.from_user.id
 
@@ -111,10 +198,13 @@ def command_sinlimit(bot, update):
 			reset_str
 		))
 	else:
-		update.message.reply_text('The sky\'s the limit.')
+		update.message.reply_text('You haven\'t sinned...yet.')
 
 def setup_dispatcher(dispatcher):
 	dispatcher.add_handler(CommandHandler('sin', command_sin))
 	dispatcher.add_handler(CommandHandler('sinlimit', command_sinlimit))
 	dispatcher.add_handler(CommandHandler('sinset', command_sinset, pass_args=True))
+	dispatcher.add_handler(CommandHandler('singet', command_singet, pass_args=True))
+	dispatcher.add_handler(CommandHandler('sinadd', command_sinadd, pass_args=True))
+	dispatcher.add_handler(CommandHandler('sinlimitreset', command_sinlimitreset, pass_args=True))
 	#dispatcher.add_handler(CommandHandler('getsin', command_getsin))
