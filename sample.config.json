@@ -1,11 +1,27 @@
 {
 	"debug_mode__COMMENT__": "To put the bot in debug mode",
 	"debug_mode": false,
+
 	"lock_file__COMMENT__": "The file used for the inter-process lock (so only one copy runs at once)",
 	"lock_file": "YeenBot.lock",
 
+	"telegram": {
+		"token__COMMENT__" :"The bot token provided by Telegram's BotFather.",
+		"token": ""
+	},
+
+	"database": {
+		"uri__COMMENT__": "The database URI provided to SQLAlchemy.",
+		"uri__MYSQL__": "mysql://root:password@localhost/yeenbot",
+		"uri": "sqlite:///debug.sqlite",
+
+		"trackModifications__COMMENT__": "Instructs SQLAlchemy to track modifications (output emitted SQL)",
+		"trackModifications": false
+	},
+
 	"privileges__COMMENT__": "Privilege profiles granted to specific users",
 	"privileges": {
+		"__COMMENT__": "Key should be Telegram user ID. Tip: @userinfobot can tell you user IDs.",
 		"default": {
 			"__COMMENT__": "This privilege profile is applied if a user doesn't exist ",
 			"default": true,
@@ -24,20 +40,61 @@
 	"sin": {
 		"reset_minutes__COMMENT__": "Time (in minutes) between resets of available sin points",
 		"reset_minutes": 10,
+
 		"sin_limit__COMMENT__": "The maximum number of sin points that may be earned in reset_minutes time.",
 		"sin_limit": 10
 	},
 
-	"telegram": {
-		"__COMMENT__" :"The bot token provided by Telegram's BotFather.",
-		"token": ""
+	"e621": {
+		"sin_award__COMMENT__": "The amount of sin awarded for searching e621.",
+		"sin_award": 5,
+
+		"download_dir__COMMENT__": "A temporary directory wherein images are downloaded and removed",
+		"download_dir": "./e621temp",
+
+		"base_url__COMMENT__": "The base URL for e621.net. This could be another website that runs Ouroboros",
+		"base_url": "https://e621.net",
+		
+		"base_query__COMMENT__": "The base portion of the search query made (should not change)",
+		"base_query": "order:random",
+
+		"query_timeout__COMMENT__": "Number of seconds for a search query to time out",
+		"query_timeout": 10,
+
+		"image_timeout__COMMENT__": "Number of seconds for an image download to time out",
+		"image_timeout": 8,
+
+		"headers__COMMENT__": "The HTTP headers sent with every request",
+		"headers": {
+			"User-Agent": "YeenBot/1.69 (by Ozzy Callooh)"
+		},
+
+		"score_min__COMMENT__": "The minimum number of upvotes a post must have to be considered",
+		"score_min": 20,
+
+		"query_entry_limit__COMMENT__": "The number of entries to query for (more is usualy better)",
+		"query_entry_limit": 30,
+
+		"file_size_limit__COMMENT__": "The maximum number of bytes a post can be to be considered",
+		"file_size_limit": 1048576,
+
+		"ratings__COMMENT__": "The ratings a post can have to be considered.",
+		"ratings": ["q", "e", "s"],
+
+		"file_types__COMMENT__": "The file types a post can be to be considered. Should be images.",
+		"file_types": ["jpg", "jpeg", "gif", "png", "tif", "bmp"],
+
+		"urls__COMMENT__": "A collection of URLs to use; no need to edit these.",
+		"urls": {
+			"post/index": "/post/index.json"
+		}
 	},
 
-	"database": {
-		"uri__COMMENT__": "The database URI provided to SQLAlchemy.",
-		"uri__MYSQL__": "mysql://root:password@localhost/yeenbot",
-		"uri": "sqlite:///debug.sqlite",
-		"trackModifications__COMMENT__": "Instructs SQLAlchemy to track modifications (output emitted SQL)",
-		"trackModifications": false
-	}
+	"blacklist": {
+		"global__COMMENT__": "The global blaclist (no posts with these tags will ever be considered)",
+		"global": [
+			"animated",
+			"some_tag_you_don't_like"
+		]
+	},
 }
